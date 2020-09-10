@@ -1,0 +1,100 @@
+---
+title: "week 37 Friends"
+author: "Alocord"
+date: "9/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+
+
+Load Packages and Call data
+```{r}
+library(tidyverse)
+library(ggplot2)
+friends  <- read_csv("friends.csv")
+
+```
+
+
+
+
+
+
+Count of ALL by episode, ready to plot
+```{r}
+
+#Create all_cast column to reference 
+df <- friends %>% 
+  mutate(all_cast = case_when(speaker == "#ALL#" ~ 1, TRUE ~ 0))
+
+
+
+# Get counts of ALL by season and episode
+all_cast_cnt <- df %>% 
+  filter(all_cast == 1) %>%
+          group_by(speaker,season,episode) %>% 
+          count() %>% 
+          ungroup()
+
+
+# Getting total ALL rows
+all_cast_sum <- all_cast_cnt %>% 
+  group_by(speaker) %>% 
+  summarise(cnt = sum(n)) %>% 
+  ungroup()
+
+
+
+# Create id column to use in plot
+all_cast_cnt <- all_cast_cnt %>% 
+  mutate(id = row_number())
+
+# Relevant for plot
+all_cast_cnt$season <- as.factor(all_cast_cnt$season)
+all_cast_cnt$id <- as.factor(all_cast_cnt$id)
+
+
+```
+
+```{r}
+
+p1 <- ggplot(all_cast_cnt, aes(x = id, y = n, color = season, fill = season)) +
+  geom_bar(stat = 'identity', width = .15) + 
+      labs(title = 'FRIENDS: Jynx! You owe me a soda!',
+         subtitle = "Throughout the series there are instances where multiple Friends say the same thing simultaneously.\nIn total, the cast participated in this behavior at least 347 times. Below is the number of times\nthe cast speaks together across episodes, with less happening as the show goes on.",
+         caption = "Data: friends R package | @Alocord",
+         x = 'Seasons',  #
+         y = 'Count') +
+  #Manually added labels and breaks. Calculated values according to season episode midpoint
+  scale_x_discrete(breaks = c("10","29","47","64","81","96","107","113","119","126"), labels = c("1","2","3","4","5","6","7","8","9","10")) +
+  scale_y_continuous(limits = c(0,23),expand = c(0,0)) + 
+  theme_classic() +
+  theme(legend.position = "none",
+        plot.title = element_markdown(color = "white"),
+        plot.subtitle = element_text(color = "white"), #Gabriel Weiss' Friends Font
+        plot.caption = element_text(color = "white", size = 8),
+      #  axis.text.x = element_blank(),
+      #  axis.ticks.x = element_blank(),
+        axis.title.x = element_text(color = "white", size = 10),
+        axis.line.y = element_blank(),
+        axis.line.x = element_blank(),
+           # Change plot and panel background
+  plot.background=element_rect(fill = 'black',color = 'black'),
+  panel.background = element_rect(fill = 'black',color = 'black')
+        )
+  
+p1
+
+
+ggsave("week 37 plot.png", p1)
+
+
+```
+
